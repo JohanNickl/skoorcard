@@ -71,6 +71,7 @@ namespace SkoorCard.Services
 					var existingHoleScore = existingPlayerScore.HoleScores.SingleOrDefault(x => x.HoleNumber == score.HoleNumber);
 					if (existingHoleScore != null) {
 						existingHoleScore.Score = score.Score;
+						existingHoleScore.Points = score.Points;
 					} else {
 						existingPlayerScore.HoleScores.Add(score);
 					}
