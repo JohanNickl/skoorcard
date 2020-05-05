@@ -61,6 +61,16 @@ namespace SkoorCard.Services
 		}
 
 		public void AddScore(Card card, PlayerHoleScore score) {
+			if (score == null 
+				|| score.HoleNumber <= 0
+				|| score.HoleNumber > card.CourseData.Holes.Count()
+				|| string.IsNullOrEmpty(score.PlayerId) 
+				|| score.Score <= 0) 
+			{
+				return;
+			}
+
+
 			var player = card.Players.SingleOrDefault(x => x.Id.Equals(score.PlayerId));
 
 			if (player != null) {
