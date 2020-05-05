@@ -129,13 +129,28 @@
     }
 
 	private void registerScore(string playerId) {
-		//navigationManager.NavigateTo($"registerscore/{playerId}");
 		selectedPlayer = card.Players.SingleOrDefault(x => x.Id.Equals(playerId));
+		if (selectedPlayer != null) {
+			int lastHoleNumber = 0;
+			if (card.PlayerScores != null) {
+				var xx = card.PlayerScores?.SingleOrDefault(x => x.PlayerId.Equals(selectedPlayer.Id));
+				if (xx != null && xx.HoleScores != null && xx.HoleScores.Count > 0) {
+					lastHoleNumber = xx.HoleScores.Max(x => x.HoleNumber);
+				}
+
+
+			} 
+			selectedScore = new PlayerHoleScore() {
+				PlayerId = playerId,
+				HoleNumber = ++lastHoleNumber
+			};
+									
+		}
 		ShowDlg = true;
 	}
 
     private void OnCancelCallback() {
-     ShowDlg = false;
+     	ShowDlg = false;
     }
 
 	private void OnSaveCallback(PlayerHoleScore score) {
