@@ -87,13 +87,10 @@ namespace SkoorCard.Services
 
 			var hole = card.CourseData.Holes.SingleOrDefault(x => x.Number == score.HoleNumber);
 			var playerScore = card.PlayerScores.SingleOrDefault(x => x.PlayerId == score.PlayerId);
-
-			var whole = (int) Math.Floor(playerScore.RoundHandicap.Value / (double)18);
-			var remainder = playerScore.RoundHandicap.Value % 18;
-
 			var extraStrokes = CalculateExtraStrokes(playerScore.RoundHandicap.Value, hole.Index);
 
-			return 2 + ((score.Score + extraStrokes) - hole.Par);
+			var points = 2 + (hole.Par + extraStrokes - score.Score);
+			return points > 0 ? points : 0;
 		}
 
 		public int CalculateExtraStrokes(int handicap, int holeIndex) {
