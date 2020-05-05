@@ -1,0 +1,73 @@
+﻿
+<div class="modal" tabindex="-1" role="dialog" style="display:block;">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header Success">
+        <h5 class="modal-title">Registrera score</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="OnCancelCallback">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        @if (Model != null) {
+            <EditForm Model="@Model">
+                <div class="form-group row">
+                    <div class="form-group">    
+                        <InputSelectNumber id="holenumber" @bind-Value="Model.HoleNumber" class="form-control form-control-sm">
+                            <option value="0">Välj hål</option>
+                            @for(int i = 1; i <= 18; i++) {
+                                <option value="@i">@i</option>
+                            }
+                        </InputSelectNumber>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <div class="form-group">    
+                         <InputSelectNumber id="score" @bind-Value="Model.Score" class="form-control form-control-sm">
+                            <option value="0">Välj antal slag</option>
+                            @for(int i = 1; i <= 10; i++) {
+                                <option value="@i">@i</option>
+                            }
+                        </InputSelectNumber>
+                    </div>
+                </div>
+            </EditForm>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" @onclick="OnSave">Save changes</button>
+        <button type="button" class="btn btn-secondary" @onclick="OnCancelCallback" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@code {
+    [Parameter]
+    public Player Player {get;set;}
+
+    [Parameter]
+    public EventCallback<PlayerHoleScore> OnSaveCallback { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancelCallback { get; set; }
+
+    [Parameter]
+    public PlayerHoleScore Model {get; set;}
+
+    protected override void OnInitialized() {
+        Console.WriteLine(Model == null ? "Model is null" : "Model exists");
+
+        if (Model == null) {
+            Model = new PlayerHoleScore();
+        }
+        Model.PlayerId = Player?.Id;
+    }
+
+    private void OnSave() {
+        OnSaveCallback.InvokeAsync(Model);
+    }
+
+
+}
