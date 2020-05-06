@@ -3,7 +3,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header Success">
-        <h5 class="modal-title">Registrera score</h5>
+        <h5 class="modal-title">@Player.Name  - Registrera score</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="OnCancelCallback">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -36,7 +36,7 @@
         }
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary" @onclick="OnSave">Save changes</button>
+        <button type="button" class="btn btn-primary" @onclick="OnSave">Ok</button>
         <button type="button" class="btn btn-secondary" @onclick="OnCancelCallback" data-dismiss="modal">Close</button>
       </div>
     </div>
@@ -56,13 +56,22 @@
     [Parameter]
     public PlayerHoleScore Model {get; set;}
 
+    [Parameter]
+    public PlayerScore PlayerScore {get; set;}
+
+    [Parameter]
+    public CourseData CourseData {get; set;}
+
     protected override void OnInitialized() {
-        Console.WriteLine(Model == null ? "Model is null" : "Model exists");
 
         if (Model == null) {
             Model = new PlayerHoleScore();
         }
         Model.PlayerId = Player?.Id;
+        if (Model.Score == 0) {
+          Model.Score = CourseData.Holes.SingleOrDefault(x => x.Number == Model.HoleNumber).Par;
+        }
+        
     }
 
     private void OnSave() {

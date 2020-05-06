@@ -41,7 +41,7 @@
 			<div class="item _out">@(card.CourseData.Holes.Where(x => x.Number <= 9).Sum(x => (double)x.Index)/(double)9.0) </div>
 			<div class="item _out">@card.CourseData.DistanceYellowFirst9</div>
 			<div class="item _out">@card.CourseData.DistanceRedFirst9</div>
-			<div class="item total">TOTAL</div>
+			<div class="item total">TOT</div>
 			<div class="item total">@card.CourseData.Par</div>
 			<div class="item total">@(card.CourseData.Holes.Sum(x => (double)x.Index)/(double)9.0) </div>
 			<div class="item total">@card.CourseData.DistanceYellow</div>
@@ -60,18 +60,16 @@
 					<div class="item">Slag</div>
 					<div class="item">Poäng</div>
 					@foreach(var h in card.CourseData.Holes) {
-						<div class="item-special">
+						<div class="item-special item-strokes">
 							<div class="bottom-left">
 								@cardService.CalculateExtraStrokes(playerScore.RoundHandicap.Value, h.Index)
 							</div>
 							<div class="item-padding">
 								@(playerScore.HoleScores.SingleOrDefault(x => x.HoleNumber == h.Number)?.ScoreAsString)
 							</div>
-							
-
 						</div>
 
-						<div class="item">
+						<div class="item item-points">
 								@(playerScore.HoleScores.SingleOrDefault(x => x.HoleNumber == h.Number)?.PointsAsString)
 						</div>
 						@if (h.Number == 9) {
@@ -98,7 +96,9 @@
 	<DlgRegisterScore OnCancelCallback="OnCancelCallback"
 					  OnSaveCallback="OnSaveCallback"
 					  Player="selectedPlayer"
-					  Model="selectedScore" />
+					  Model="selectedScore"
+					  CourseData="courseData"
+					  PlayerScore="selectedPlayerScore" />
 }
 
 
@@ -110,6 +110,7 @@
 
 	private Player selectedPlayer = null;
 	private PlayerHoleScore selectedScore = null;
+	private PlayerScore selectedPlayerScore = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -129,23 +130,13 @@
     }
 
 	private void registerScore(string playerId) {
-		selectedPlayer = card.Players.SingleOrDefault(x => x.Id.Equals(playerId));
-		if (selectedPlayer != null) {
-			int lastHoleNumber = 0;
-			if (card.PlayerScores != null) {
-				var xx = card.PlayerScores?.SingleOrDefault(x => x.PlayerId.Equals(selectedPlayer.Id));
-				if (xx != null && xx.HoleScores != null && xx.HoleScores.Count > 0) {
-					lastHoleNumber = xx.HoleScores.Max(x => x.HoleNumber);
-				}
+		selectedPlayer = cardService.GetPlayer(playerId);
+		selectedPlayerScore = card.PlayerScores.SingleOrDefault(x => x.PlayerId.Equals(playerId));
 
-
-			} 
-			selectedScore = new PlayerHoleScore() {
-				PlayerId = playerId,
-				HoleNumber = ++lastHoleNumber
-			};
-									
-		}
+		selectedScore = new PlayerHoleScore() {
+			PlayerId = playerId,
+			HoleNumber = cardService.LastPlayedHole(playerId) +1
+		};
 		ShowDlg = true;
 	}
 

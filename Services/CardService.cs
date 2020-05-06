@@ -14,6 +14,8 @@ namespace SkoorCard.Services
 
 		Card GetCard();
 		int CalculateExtraStrokes(int handicap, int holeIndex);
+		Player GetPlayer(string playerId);
+		int LastPlayedHole(string playerId);
 	}
 
 	public class CardService : ICardService
@@ -109,6 +111,29 @@ namespace SkoorCard.Services
 			var remainder = handicap % 18;
 
 			return whole + (remainder >= holeIndex ? 1 : 0);
+		}
+
+		public Player GetPlayer(string playerId)
+		{
+			if (Card == null) {
+				throw new Exception("A score card must first be created");
+			}
+
+			if (Card.Players != null && Card.Players.Count() > 0) {
+				return Card.Players.SingleOrDefault(x => x.Id.Equals(playerId));
+			}
+			return null;
+		}
+
+		public int LastPlayedHole(string playerId) {
+			int lastHoleNumber = 0;
+			if (Card.PlayerScores != null) {
+				var xx = Card.PlayerScores?.SingleOrDefault(x => x.PlayerId.Equals(playerId));
+				if (xx != null && xx.HoleScores != null && xx.HoleScores.Count > 0) {
+					lastHoleNumber = xx.HoleScores.Max(x => x.HoleNumber);
+				}
+			} 
+			return lastHoleNumber;
 		}
 	}
 }

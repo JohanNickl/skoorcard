@@ -39,6 +39,10 @@ html, body {
     padding: 10px 5px;
 }
 
+.grid-container > .item-points, .item-strokes {
+    width:50px;
+}
+
 
 .course-name {
     grid-column-start: 1;
