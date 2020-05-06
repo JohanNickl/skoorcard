@@ -2,7 +2,7 @@
 
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    background-color: #ccc;
+    background-color: #fff;
 }
 
 .grid-container {
@@ -67,6 +67,36 @@ html, body {
     top:20;
 }
 
+.scorecard-container {
+    width:650px;
+    display:flex;
+    flex-wrap: wrap;
+    justify-content: left ; /* for horizontal aligning of child divs */
+    align-items: auto; /* for vertical aligning */
+    padding-bottom:50px;
+}
+
+.player-container > .grid-container-player {
+    float:left;
+}
+
+.nav-bottom {
+    position: fixed;
+    height:50px;
+    bottom:0;
+    background-color: #662e8c;
+    width:100%;
+}
+
+/* Links inside the navbar */
+.nav-bottom a {
+    float: left;
+    display: block;
+    color: #f2f2f2;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+  }
 
 
 .valid.modified:not([type=checkbox]) {

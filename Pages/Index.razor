@@ -8,7 +8,7 @@
 @inject NavigationManager navigationManager
 
 @if (card != null) {
-	<div>
+	<div class="scorecard-container">
 		<div class="grid-container grid-container-course" style="float:left;" >
 			<div class="item course-name">@card.CourseData.Name</div>
 			<div class="item">Hål</div>
@@ -48,44 +48,51 @@
 			<div class="item total">@card.CourseData.DistanceRed</div>
 		</div>
 		@if (card.PlayerScores != null) {
-			@foreach(var playerScore in card.PlayerScores) {
-				<div class="grid-container grid-container-player" style="float:left;">
-					<div class="item-special player-name" @onclick="@(e => registerScore(playerScore.PlayerId))">
-						<div class="bottom-left">@playerScore.RoundHandicapAsString</div>
-						<div class="item-padding">
-							Player
-						</div>
-						
-					</div>
-					<div class="item">Slag</div>
-					<div class="item">Poäng</div>
-					@foreach(var h in card.CourseData.Holes) {
-						<div class="item-special item-strokes">
-							<div class="bottom-left">
-								@cardService.CalculateExtraStrokes(playerScore.RoundHandicap.Value, h.Index)
-							</div>
+			<div class="player-container">
+				@foreach(var playerScore in card.PlayerScores) {
+					<div class="grid-container grid-container-player">
+						<div class="item-special player-name" @onclick="@(e => registerScore(playerScore.PlayerId))">
+							<div class="bottom-left">@playerScore.RoundHandicapAsString</div>
 							<div class="item-padding">
-								@(playerScore.HoleScores.SingleOrDefault(x => x.HoleNumber == h.Number)?.ScoreAsString)
+								@cardService.GetPlayer(playerScore.PlayerId).Name
 							</div>
+							
 						</div>
+						<div class="item">Slag</div>
+						<div class="item">Poäng</div>
+						@foreach(var h in card.CourseData.Holes) {
+							<div class="item-special item-strokes">
+								<div class="bottom-left">
+									@cardService.CalculateExtraStrokes(playerScore.RoundHandicap.Value, h.Index)
+								</div>
+								<div class="item-padding">
+									@(playerScore.HoleScores.SingleOrDefault(x => x.HoleNumber == h.Number)?.ScoreAsString)
+								</div>
+							</div>
 
-						<div class="item item-points">
-								@(playerScore.HoleScores.SingleOrDefault(x => x.HoleNumber == h.Number)?.PointsAsString)
-						</div>
-						@if (h.Number == 9) {
-							<div class="item _out">@playerScore.ScoreOut</div>
-							<div class="item _out">@playerScore.PointsOut</div>
+							<div class="item item-points">
+									@(playerScore.HoleScores.SingleOrDefault(x => x.HoleNumber == h.Number)?.PointsAsString)
+							</div>
+							@if (h.Number == 9) {
+								<div class="item _out">@playerScore.ScoreOut</div>
+								<div class="item _out">@playerScore.PointsOut</div>
+							}
 						}
-					}
-					<div class="item _in">@playerScore.ScoreIn</div>
-					<div class="item _in">@playerScore.PointsIn</div>
-					<div class="item _out">@playerScore.ScoreOut</div>
-					<div class="item _out">@playerScore.PointsOut</div>
-					<div class="item total">@playerScore.Score</div>
-					<div class="item total">@playerScore.Points</div>
-				</div>
-			}
+						<div class="item _in">@playerScore.ScoreIn</div>
+						<div class="item _in">@playerScore.PointsIn</div>
+						<div class="item _out">@playerScore.ScoreOut</div>
+						<div class="item _out">@playerScore.PointsOut</div>
+						<div class="item total">@playerScore.Score</div>
+						<div class="item total">@playerScore.Points</div>
+					</div>
+					
+				}
+			</div>
 		}
+		<div class="nav-bottom">
+			<a href="#">Add player</a>
+			<a href="#">Exit</a>
+		</div>
 	</div>
 
 } else {
@@ -125,8 +132,22 @@
 			Name = "Gustav",
 			Handicap = 47.7
 		};
+
+		var p3 = new Player() {
+			Name = "Johan 2",
+			Handicap = 11.7
+		};
+
+		var p4 = new Player() {
+			Name = "Gustav 2",
+			Handicap = 47.7
+		};
+		/*
 		cardService.AddPlayer(card, p1, TeeType.Yellow);
 		cardService.AddPlayer(card, p2, TeeType.Red);
+		cardService.AddPlayer(card, p3, TeeType.Yellow);
+		cardService.AddPlayer(card, p4, TeeType.Red);
+		*/
     }
 
 	private void registerScore(string playerId) {
