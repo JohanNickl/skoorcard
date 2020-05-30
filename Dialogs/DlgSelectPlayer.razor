@@ -1,0 +1,89 @@
+﻿@inject IPlayerService playerService
+
+<div class="modal" tabindex="-1" role="dialog" style="display:block;">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header Success">
+        <h5 class="modal-title">Select player</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="OnCancelCallback">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        @if (Players != null) {
+          <table class="table">
+            <thead>
+              <tr>
+                <td>Name</td>
+                <td>Handicap</td>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach(var p in Players) {
+                <tr>
+                  <td>@p.Name</td>
+                  <td>@p.Handicap</td>
+                  <td><button class="btn btn-primary" @onclick="(() => OnSelect(p))" >Select</button></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        @if (ShowCreateNew) {
+          <DlgAddPlayer OnCancelCallback="OnCancelCreateNewCallback" OnSaveCallback="OnSaveCreateNewCallback" />
+        }
+
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" @onclick="OnCreateNew">Close</button>
+        <button type="button" class="btn btn-secondary" @onclick="OnCancelCallback" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+@code {
+
+    [Parameter]
+    public EventCallback<Player> OnSelectCallback { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancelCallback { get; set; }
+
+    public IList<Player> Players {get; set;}
+
+    bool ShowCreateNew = false;
+
+    protected override async Task OnInitializedAsync() {
+      await List();
+        
+    }
+
+    private async Task List() {
+      Players = await playerService.ListAsync();
+    }
+
+    private void OnSelect(Player p) {
+      OnSelectCallback.InvokeAsync(p);
+    }
+
+    private void OnCreateNew() {
+      ShowCreateNew = true;
+    }
+
+    private async Task OnSaveCreateNewCallback(Player p) {
+      ShowCreateNew = false;
+      await playerService.AddAsync(p);
+      await List();
+    }
+
+    private void OnCancelCreateNewCallback() {
+      ShowCreateNew = false;
+    }
+
+
+}

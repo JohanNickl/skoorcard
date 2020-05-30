@@ -21,6 +21,7 @@ namespace SkoorCard
             builder.Services.AddTransient(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
             builder.Services.AddScoped<ICourseDataService, CourseDataService>();
             builder.Services.AddScoped<ICardService, CardService>();
+            builder.Services.AddScoped<IPlayerService, PlayerService>();
             
             await builder.Build().RunAsync();
         }

@@ -1,0 +1,60 @@
+@page "/players"
+@using SkoorCard.Services
+@using System.Linq
+
+@inject IPlayerService playerService;
+
+@if (PlayerList != null) {
+	<table class="table">
+		<thead>
+			<tr>
+				<td>Name</td>
+				<td>Hcp</td>
+				<td></td>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach(var player in PlayerList) {
+				<tr>
+					<td>@player.Name</td>
+					<td>@player.Handicap</td>
+					<td><button @onclick="(() => Edit(player))">Edit</button></td>
+				</tr>
+			}
+		</tbody>
+	</table>
+}
+
+<button @onclick="((e) => {ShowDlgNewPlayer = true;})">Add player</button>
+
+if (ShowDlgNewPlayer) {
+	<DlgAddPlayer OnSaveCallback="AddPlayerCallback" OnCancelCallback="@(() => {ShowDlgNewPlayer = false;})" />
+}
+
+@code {
+	IList<Player> PlayerList {get; set;}
+
+	bool ShowDlgNewPlayer = false;
+
+	protected override async Task OnInitializedAsync() {
+		await List();
+	}
+
+	async Task List() {
+		PlayerList = await playerService.ListAsync();
+	}
+
+
+	void Edit(Player p) {
+
+	}
+
+	void ShowAddDlg() {
+
+	}
+
+	async Task AddPlayerCallback(Player player) {
+		await playerService.AddAsync(player);
+		await List();
+	}
+}

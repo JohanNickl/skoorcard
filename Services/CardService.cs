@@ -10,12 +10,11 @@ namespace SkoorCard.Services
 	{
 		void AddPlayer(Card card, Player player, TeeType teeType);
 		Task<Card> CreateAsync(CourseData cd);
-		void AddScore(Card card, PlayerHoleScore score);
+		void AddScore(Card card, CardPlayerScore score);
 
 		Card GetCard();
-		int CalculateExtraStrokes(int handicap, int holeIndex);
-		Player GetPlayer(string playerId);
-		int LastPlayedHole(string playerId);
+		int CalculateExtraStrokes(int? handicap, int holeIndex);
+		void AddPlayer(Card card, CardPlayer cardPlayer);
 	}
 
 	public class CardService : ICardService
@@ -37,11 +36,7 @@ namespace SkoorCard.Services
 			return await Task.FromResult(card);
 		}
 
-		public void AddPlayer(Card card, Player player, TeeType teeType)
-		{	
-			if (string.IsNullOrEmpty(player.Id)) { player.Id = Guid.NewGuid().ToString(); }
-			if (!card.Players.Any(x => x.Name.Equals(player.Name)))
-			{
+		private int? GetRoundHandicap(Player player, TeeType teeType) {
 				int? roundHandicap = null;
 				// find slope handicap for player
 				if (Card != null) {
@@ -53,87 +48,85 @@ namespace SkoorCard.Services
 						}
 					}
 				}
+				return roundHandicap;
+		}
 
-				card.Players.Add(player);
-				card.PlayerScores.Add(new PlayerScore() {
-					PlayerId = player.Id,
+		public void AddPlayer(Card card, Player player, TeeType teeType)
+		{	
+			int? roundHandicap = GetRoundHandicap(player, teeType);
+			AddPlayer(card, player, teeType, roundHandicap);
+		}
+
+		public void AddPlayer(Card card, Player player, TeeType teeType, int? roundHandicap) {
+			if (!card.CardPlayers.Any(x => x.Player.Id.Equals(player.Id))) {
+				AddPlayer(card, new CardPlayer(card, player, teeType) {
 					RoundHandicap = roundHandicap
 				});
 			}
 		}
 
-		public void AddScore(Card card, PlayerHoleScore score) {
+		public void AddPlayer(Card card, CardPlayer cardPlayer) {
+			var existing = card.CardPlayers.SingleOrDefault(x => x.Id.Equals(cardPlayer.Id));
+			if (existing != null) {
+				// have anything of importance changed?
+				if (existing.TeeType != cardPlayer.TeeType && existing.RoundHandicap == cardPlayer.RoundHandicap) {
+					// re-calculate
+					existing.RoundHandicap = GetRoundHandicap(existing.Player, cardPlayer.TeeType);
+					existing.TeeType = cardPlayer.TeeType;
+				} else if (existing.RoundHandicap != cardPlayer.RoundHandicap) {
+					existing.RoundHandicap = cardPlayer.RoundHandicap;
+					existing.TeeType = cardPlayer.TeeType;
+				}
+			} else {
+				// new
+				if (!cardPlayer.RoundHandicap.HasValue) {
+					cardPlayer.RoundHandicap = GetRoundHandicap(cardPlayer.Player, cardPlayer.TeeType);
+				}
+				card.CardPlayers.Add(cardPlayer);
+			}
+			
+		}
+
+		public void AddScore(Card card, CardPlayerScore score) {
+			
 			if (score == null 
 				|| score.HoleNumber <= 0
 				|| score.HoleNumber > card.CourseData.Holes.Count()
-				|| string.IsNullOrEmpty(score.PlayerId) 
+				|| score.CardPlayer.Id.Equals(Guid.Empty)
 				|| score.Score <= 0) 
 			{
 				return;
 			}
 
-
-			var player = card.Players.SingleOrDefault(x => x.Id.Equals(score.PlayerId));
-
-			if (player != null) {
-				var existingPlayerScore = card.PlayerScores.SingleOrDefault(x => x.PlayerId.Equals(player.Id));
-				score.Points = CalculatePoints(card, score);
-
-				if (existingPlayerScore != null) {
-					var existingHoleScore = existingPlayerScore.HoleScores.SingleOrDefault(x => x.HoleNumber == score.HoleNumber);
-					if (existingHoleScore != null) {
-						existingHoleScore.Score = score.Score;
-						existingHoleScore.Points = score.Points;
-					} else {
-						existingPlayerScore.HoleScores.Add(score);
-					}
-				} else {
-					card.PlayerScores.Add(new PlayerScore() {
-						HoleScores = new List<PlayerHoleScore>() { score },
-						PlayerId = score.PlayerId
-					});
-				}
+			CalculatePoints(card, score);
+			
+			var existing = card.CardPlayers.FirstOrDefault(x => x.Id.Equals(score.CardPlayer.Id)).CardPlayerScores.SingleOrDefault(x => x.HoleNumber == score.HoleNumber);
+			if (existing != null) {
+				existing.Score = score.Score;
+				existing.Points = score.Points;
+			} else {
+				card.CardPlayers.FirstOrDefault(x => x.Id.Equals(score.CardPlayer.Id)).CardPlayerScores.Add(score);
 			}
+
 		}
 
-		private int? CalculatePoints(Card card, PlayerHoleScore score) {
+		private void CalculatePoints(Card card, CardPlayerScore score) {
 
 			var hole = card.CourseData.Holes.SingleOrDefault(x => x.Number == score.HoleNumber);
-			var playerScore = card.PlayerScores.SingleOrDefault(x => x.PlayerId == score.PlayerId);
-			var extraStrokes = CalculateExtraStrokes(playerScore.RoundHandicap.Value, hole.Index);
+			var playerScore = card.CardPlayers.SingleOrDefault(x => x.Id.Equals(score.CardPlayer.Id));
+			var extraStrokes = CalculateExtraStrokes(playerScore.RoundHandicap, hole.Index);
 
 			var points = 2 + (hole.Par + extraStrokes - score.Score);
-			return points > 0 ? points : 0;
+			score.Points = points > 0 ? points : 0;
 		}
 
-		public int CalculateExtraStrokes(int handicap, int holeIndex) {
-			var whole = (int) Math.Floor(handicap / (double)18);
+		public int CalculateExtraStrokes(int? handicap, int holeIndex) {
+			if (!handicap.HasValue) return 0;
+
+			var whole = (int) Math.Floor(handicap.Value / (double)18);
 			var remainder = handicap % 18;
 
 			return whole + (remainder >= holeIndex ? 1 : 0);
-		}
-
-		public Player GetPlayer(string playerId)
-		{
-			if (Card == null) {
-				throw new Exception("A score card must first be created");
-			}
-
-			if (Card.Players != null && Card.Players.Count() > 0) {
-				return Card.Players.SingleOrDefault(x => x.Id.Equals(playerId));
-			}
-			return null;
-		}
-
-		public int LastPlayedHole(string playerId) {
-			int lastHoleNumber = 0;
-			if (Card.PlayerScores != null) {
-				var xx = Card.PlayerScores?.SingleOrDefault(x => x.PlayerId.Equals(playerId));
-				if (xx != null && xx.HoleScores != null && xx.HoleScores.Count > 0) {
-					lastHoleNumber = xx.HoleScores.Max(x => x.HoleNumber);
-				}
-			} 
-			return lastHoleNumber;
 		}
 	}
 }

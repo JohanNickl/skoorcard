@@ -7,13 +7,13 @@ namespace SkoorCard.Services
 	{
 		public Card()
 		{
-			Players = new List<Player>();
-			PlayerScores = new List<PlayerScore>();
+			Id = Guid.NewGuid();
+			CardPlayers = new List<CardPlayer>();
 		}
 
+		public Guid Id { get; set; }
 		public DateTime Created { get; set; }
 		public CourseData CourseData { get; internal set; }
-		public IList<Player> Players { get; internal set; }
-		public IList<PlayerScore> PlayerScores { get; internal set; }
+		public IList<CardPlayer> CardPlayers { get; internal set; }
 	}
 }

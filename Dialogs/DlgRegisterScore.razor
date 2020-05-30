@@ -3,7 +3,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header Success">
-        <h5 class="modal-title">@Player.Name  - Registrera score</h5>
+        <h5 class="modal-title">@CardPlayer.Player.Name  - Registrera score</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="OnCancelCallback">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -44,20 +44,17 @@
 </div>
 
 @code {
-    [Parameter]
-    public Player Player {get;set;}
 
     [Parameter]
-    public EventCallback<PlayerHoleScore> OnSaveCallback { get; set; }
+    public EventCallback<CardPlayerScore> OnSaveCallback { get; set; }
 
     [Parameter]
     public EventCallback OnCancelCallback { get; set; }
 
-    [Parameter]
-    public PlayerHoleScore Model {get; set;}
+    public CardPlayerScore Model {get; set;}
 
     [Parameter]
-    public PlayerScore PlayerScore {get; set;}
+    public CardPlayer CardPlayer {get; set;}
 
     [Parameter]
     public CourseData CourseData {get; set;}
@@ -65,12 +62,14 @@
     protected override void OnInitialized() {
 
         if (Model == null) {
-            Model = new PlayerHoleScore();
+            Model = new CardPlayerScore(CardPlayer) {
+              HoleNumber = (CardPlayer.CardPlayerScores.Count > 0 ? CardPlayer.CardPlayerScores.Max(x => x.HoleNumber) : 0) +1
+            };
         }
-        Model.PlayerId = Player?.Id;
         if (Model.Score == 0) {
           Model.Score = CourseData.Holes.SingleOrDefault(x => x.Number == Model.HoleNumber).Par;
         }
+        
         
     }
 

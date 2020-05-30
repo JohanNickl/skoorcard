@@ -5,6 +5,7 @@
 
 @inject ICourseDataService courseDataService
 @inject ICardService cardService
+@inject IPlayerService playerService
 @inject NavigationManager navigationManager
 
 @if (card != null) {
@@ -47,14 +48,14 @@
 			<div class="item total">@card.CourseData.DistanceYellow</div>
 			<div class="item total">@card.CourseData.DistanceRed</div>
 		</div>
-		@if (card.PlayerScores != null) {
+		@if (card.CardPlayers != null) {
 			<div class="player-container">
-				@foreach(var playerScore in card.PlayerScores) {
-					<div class="grid-container grid-container-player">
-						<div class="item-special player-name" @onclick="@(e => registerScore(playerScore.PlayerId))">
-							<div class="bottom-left">@playerScore.RoundHandicapAsString</div>
+				@foreach(var cardPlayer in card.CardPlayers) {
+					<div class="grid-container grid-container-player" @onclick="@(e => registerScore(cardPlayer))" >
+						<div class="item-special player-name">
+							<div class="bottom-left">@cardPlayer.RoundHandicapAsString</div>
 							<div class="item-padding">
-								@cardService.GetPlayer(playerScore.PlayerId).Name
+								@cardPlayer.Player.Name
 							</div>
 							
 						</div>
@@ -63,34 +64,34 @@
 						@foreach(var h in card.CourseData.Holes) {
 							<div class="item-special item-strokes">
 								<div class="bottom-left">
-									@cardService.CalculateExtraStrokes(playerScore.RoundHandicap.Value, h.Index)
+									@cardService.CalculateExtraStrokes(cardPlayer.RoundHandicap, h.Index)
 								</div>
 								<div class="item-padding">
-									@(playerScore.HoleScores.SingleOrDefault(x => x.HoleNumber == h.Number)?.ScoreAsString)
+									@(cardPlayer.CardPlayerScores.SingleOrDefault(x => x.HoleNumber == h.Number)?.ScoreAsString)
 								</div>
 							</div>
 
 							<div class="item item-points">
-									@(playerScore.HoleScores.SingleOrDefault(x => x.HoleNumber == h.Number)?.PointsAsString)
+									@(cardPlayer.CardPlayerScores.SingleOrDefault(x => x.HoleNumber == h.Number)?.PointsAsString)
 							</div>
 							@if (h.Number == 9) {
-								<div class="item _out">@playerScore.ScoreOut</div>
-								<div class="item _out">@playerScore.PointsOut</div>
+								<div class="item _out">@cardPlayer.ScoreOut</div>
+								<div class="item _out">@cardPlayer.PointsOut</div>
 							}
 						}
-						<div class="item _in">@playerScore.ScoreIn</div>
-						<div class="item _in">@playerScore.PointsIn</div>
-						<div class="item _out">@playerScore.ScoreOut</div>
-						<div class="item _out">@playerScore.PointsOut</div>
-						<div class="item total">@playerScore.Score</div>
-						<div class="item total">@playerScore.Points</div>
+						<div class="item _in">@cardPlayer.ScoreIn</div>
+						<div class="item _in">@cardPlayer.PointsIn</div>
+						<div class="item _out">@cardPlayer.ScoreOut</div>
+						<div class="item _out">@cardPlayer.PointsOut</div>
+						<div class="item total">@cardPlayer.Score</div>
+						<div class="item total">@cardPlayer.Points</div>
 					</div>
 					
 				}
 			</div>
 		}
 		<div class="nav-bottom">
-			<a href="#">Add player</a>
+			<a href="#" @onclick="(() => { ShowSelectPlayerDlg = true;})">Add player</a>
 			<a href="#">Exit</a>
 		</div>
 	</div>
@@ -102,10 +103,16 @@
 @if (ShowDlg) {
 	<DlgRegisterScore OnCancelCallback="OnCancelCallback"
 					  OnSaveCallback="OnSaveCallback"
-					  Player="selectedPlayer"
-					  Model="selectedScore"
 					  CourseData="courseData"
-					  PlayerScore="selectedPlayerScore" />
+					  CardPlayer="selectedCardPlayer" />
+}
+
+@if (ShowSelectPlayerDlg) {
+	<DlgSelectPlayer OnCancelCallback="OnCancelSelectPlayer" OnSelectCallback="OnSelectPlayer" />
+}
+
+@if (ShowEditCardPlayer) {
+	<DlgEditCardPlayer OnCancelCallback="@(() => { ShowEditCardPlayer = false; })" OnSelectCallback="OnEditCardPlayer" Model="selectedCardPlayer" />
 }
 
 
@@ -115,9 +122,12 @@
 
 	bool ShowDlg = false;
 
-	private Player selectedPlayer = null;
-	private PlayerHoleScore selectedScore = null;
-	private PlayerScore selectedPlayerScore = null;
+	bool ShowDlgNewPlayer = false;
+	bool ShowSelectPlayerDlg = false;
+	bool ShowEditCardPlayer = false;
+
+	private CardPlayerScore selectedScore = null;
+	private CardPlayer selectedCardPlayer = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -143,22 +153,19 @@
 			Handicap = 47.7
 		};
 		
-		cardService.AddPlayer(card, p1, TeeType.Yellow);
-		cardService.AddPlayer(card, p2, TeeType.Red);
+
 		/*
 		cardService.AddPlayer(card, p3, TeeType.Yellow);
 		cardService.AddPlayer(card, p4, TeeType.Red);
 		*/
     }
 
-	private void registerScore(string playerId) {
-		selectedPlayer = cardService.GetPlayer(playerId);
-		selectedPlayerScore = card.PlayerScores.SingleOrDefault(x => x.PlayerId.Equals(playerId));
+	private void AddPlayer(Player player, TeeType teeType) {
+		cardService.AddPlayer(card, player, teeType);
+	}
 
-		selectedScore = new PlayerHoleScore() {
-			PlayerId = playerId,
-			HoleNumber = cardService.LastPlayedHole(playerId) +1
-		};
+	private void registerScore(CardPlayer cardPlayer) {
+		selectedCardPlayer = cardPlayer;
 		ShowDlg = true;
 	}
 
@@ -166,9 +173,29 @@
      	ShowDlg = false;
     }
 
-	private void OnSaveCallback(PlayerHoleScore score) {
+	private void OnSaveCallback(CardPlayerScore score) {
 		cardService.AddScore(card, score);
 		ShowDlg = false;
+		selectedCardPlayer = null;
+	}
+
+	private void OnCancelSelectPlayer() {
+		ShowSelectPlayerDlg = false;
+
+	}
+
+	private void OnSelectPlayer(Player p) {
+
+		selectedCardPlayer = new CardPlayer(card, p, TeeType.Yellow);
+		ShowSelectPlayerDlg = false;
+
+		// show the CardPlayer dialog
+		ShowEditCardPlayer = true;
+	}
+
+	private void OnEditCardPlayer(CardPlayer cardPlayer) {
+		ShowEditCardPlayer = false;
+		cardService.AddPlayer(card, cardPlayer);
 	}
 
 }
